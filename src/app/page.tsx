@@ -1,203 +1,143 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useCrossChainTransfer } from "@/hooks/use-cross-chain-transfer";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
-  SupportedChainId,
-  SUPPORTED_CHAINS,
-  CHAIN_TO_CHAIN_NAME,
-} from "@/lib/chains";
-import { ProgressSteps } from "@/components/progress-step";
-import { TransferLog } from "@/components/transfer-log";
-import { Timer } from "@/components/timer";
-import { TransferTypeSelector } from "@/components/transfer-type";
+import { CHAIN_TO_CHAIN_NAME, SUPPORTED_CHAINS } from "@/lib/chains";
 
 export default function Home() {
-  const { currentStep, logs, error, executeTransfer, getBalance, reset } =
-    useCrossChainTransfer();
-  const [sourceChain, setSourceChain] = useState<SupportedChainId>(
-    SupportedChainId.ETH_SEPOLIA,
-  );
-  const [destinationChain, setDestinationChain] = useState<SupportedChainId>(
-    SupportedChainId.AVAX_FUJI,
-  );
-  const [amount, setAmount] = useState("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [showFinalTime, setShowFinalTime] = useState(false);
-  const [transferType, setTransferType] = useState<"fast" | "standard">("fast");
-  const [balance, setBalance] = useState("0");
+  const {
+    currentStep,
+    logs,
+    error,
+    executeTransfer,
+    getBalance,
+    reset,
+  } = useCrossChainTransfer();
 
-  const handleStartTransfer = async () => {
-    setIsTransferring(true);
-    setShowFinalTime(false);
-    setElapsedSeconds(0);
-    try {
-      await executeTransfer(
-        sourceChain,
-        destinationChain,
-        amount,
-        transferType,
-      );
-    } catch (error) {
-      console.error("Transfer failed:", error);
-    } finally {
-      setIsTransferring(false);
-      setShowFinalTime(true);
-    }
-  };
-
-  const handleReset = () => {
-    reset();
-    setIsTransferring(false);
-    setShowFinalTime(false);
-    setElapsedSeconds(0);
-  };
+  const [sourceChain, setSourceChain] = useState<number>(
+    SUPPORTED_CHAINS[0],
+  );
+  const [destinationChain, setDestinationChain] = useState<number>(
+    SUPPORTED_CHAINS[1],
+  );
+  const [amount, setAmount] = useState<string>("1.0");
+  const [balances, setBalances] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    const wrapper = async () => {
-      try {
-        const balance = await getBalance(sourceChain);
-        setBalance(balance);
-      } catch (error) {
-        console.error("Failed to get balance:", error);
-        setBalance("0");
+    const fetchBalances = async () => {
+      const newBalances: Record<number, string> = {};
+      for (const chainId of SUPPORTED_CHAINS) {
+        try {
+          const balance = await getBalance(chainId);
+          newBalances[chainId] = balance;
+        } catch (error) {
+          console.error(`Failed to get balance for chain ${chainId}:`, error);
+          newBalances[chainId] = "Error";
+        }
       }
+      setBalances(newBalances);
     };
-    wrapper();
-  }, [sourceChain]);
+
+    fetchBalances();
+  }, [getBalance]);
+
+  const handleTransfer = async () => {
+    await executeTransfer(
+      sourceChain,
+      destinationChain,
+      amount,
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center">
-            Cross-Chain USDC Transfer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Transfer Type</Label>
-            <TransferTypeSelector
-              value={transferType}
-              onChange={setTransferType}
-            />
-            <p className="text-sm text-muted-foreground">
-              {transferType === "fast"
-                ? "Faster transfers with lower finality threshold (1000 blocks)"
-                : "Standard transfers with higher finality (2000 blocks)"}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Source Chain</Label>
-              <Select
-                value={String(sourceChain)}
-                onValueChange={(value) => setSourceChain(Number(value))}
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+      <div className="w-full max-w-2xl p-8 bg-white rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+          Cross-Chain Transfer Protocol (CCTP) Sample
+        </h1>
+
+        {currentStep === "idle" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Source Chain
+              </label>
+              <select
+                value={sourceChain}
+                onChange={(e) => setSourceChain(Number(e.target.value))}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_TO_CHAIN_NAME[chainId]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {SUPPORTED_CHAINS.map((chainId) => (
+                  <option key={chainId} value={chainId}>
+                    {CHAIN_TO_CHAIN_NAME[chainId]} (Balance:{" "}
+                    {balances[chainId] || "Loading..."} USDC)
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Destination Chain</Label>
-              <Select
-                value={String(destinationChain)}
-                onValueChange={(value) => setDestinationChain(Number(value))}
-                disabled={!sourceChain}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Destination Chain
+              </label>
+              <select
+                value={destinationChain}
+                onChange={(e) => setDestinationChain(Number(e.target.value))}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select destination chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.filter(
-                    (chainId) => chainId !== sourceChain,
-                  ).map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_TO_CHAIN_NAME[chainId]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {SUPPORTED_CHAINS.map((chainId) => (
+                  <option key={chainId} value={chainId}>
+                    {CHAIN_TO_CHAIN_NAME[chainId]} (Balance:{" "}
+                    {balances[chainId] || "Loading..."} USDC)
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Amount (USDC)</Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              min="0"
-              max={parseFloat(balance)}
-              step="any"
-            />
-            <p className="text-sm text-muted-foreground">{balance} available</p>
-          </div>
-
-          <div className="text-center">
-            {showFinalTime ? (
-              <div className="text-2xl font-mono">
-                <span>
-                  {Math.floor(elapsedSeconds / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                </span>
-                :
-                <span>{(elapsedSeconds % 60).toString().padStart(2, "0")}</span>
-              </div>
-            ) : (
-              <Timer
-                isRunning={isTransferring}
-                initialSeconds={elapsedSeconds}
-                onTick={setElapsedSeconds}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Amount (USDC)
+              </label>
+              <input
+                type="text"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               />
-            )}
-          </div>
+            </div>
 
-          <ProgressSteps currentStep={currentStep} />
-
-          <TransferLog logs={logs} />
-          {error && <div className="text-red-500 text-center">{error}</div>}
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={handleStartTransfer}
-              disabled={isTransferring || currentStep === "completed"}
+            <button
+              onClick={handleTransfer}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              {currentStep === "completed"
-                ? "Transfer Complete"
-                : "Start Transfer"}
-            </Button>
-            {(currentStep === "completed" || currentStep === "error") && (
-              <Button variant="outline" onClick={handleReset}>
-                Reset
-              </Button>
-            )}
+              Initiate Transfer
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {currentStep !== "idle" && (
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-4 text-center">Transfer Status</h2>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-center text-lg capitalize">{currentStep.replace("-", " ")}</p>
+              <div className="mt-4 h-64 overflow-y-auto bg-black text-white p-4 rounded-md font-mono text-sm">
+                {logs.map((log, i) => (
+                  <p key={i}>{log}</p>
+                ))}
+              </div>
+              {error && <p className="text-red-500 mt-4">Error: {error}</p>}
+              {(currentStep === "completed" || currentStep === "error") && (
+                <button
+                  onClick={reset}
+                  className="mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  New Transfer
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
