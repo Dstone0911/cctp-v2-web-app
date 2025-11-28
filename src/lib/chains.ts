@@ -1,6 +1,7 @@
 import type { Hex } from "viem";
 
 export enum SupportedChainId {
+  ETH_MAINNET = 1,
   ETH_SEPOLIA = 11155111,
   AVAX_FUJI = 43113,
   BASE_SEPOLIA = 84532,
@@ -20,6 +21,7 @@ export const DEFAULT_MAX_FEE = 1000n;
 export const DEFAULT_FINALITY_THRESHOLD = 2000;
 
 export const CHAIN_TO_CHAIN_NAME: Record<number, string> = {
+  [SupportedChainId.ETH_MAINNET]: "Ethereum",
   [SupportedChainId.ETH_SEPOLIA]: "Ethereum Sepolia",
   [SupportedChainId.AVAX_FUJI]: "Avalanche Fuji",
   [SupportedChainId.BASE_SEPOLIA]: "Base Sepolia",
@@ -36,6 +38,7 @@ export const CHAIN_TO_CHAIN_NAME: Record<number, string> = {
 };
 
 export const CHAIN_IDS_TO_USDC_ADDRESSES: Record<number, Hex | string> = {
+  [SupportedChainId.ETH_MAINNET]: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
   [SupportedChainId.ETH_SEPOLIA]: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
   [SupportedChainId.AVAX_FUJI]: "0x5425890298aed601595a70AB815c96711a31Bc65",
   [SupportedChainId.BASE_SEPOLIA]: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
@@ -59,6 +62,7 @@ export const CHAIN_IDS_TO_USDC_ADDRESSES: Record<number, Hex | string> = {
 };
 
 export const CHAIN_IDS_TO_TOKEN_MESSENGER: Record<number, Hex | string> = {
+  [SupportedChainId.ETH_MAINNET]: "0xbd3fa81b58ba92a82136038b2521064048f4e086",
   [SupportedChainId.ETH_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
   [SupportedChainId.AVAX_FUJI]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
   [SupportedChainId.BASE_SEPOLIA]: "0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa",
@@ -82,6 +86,7 @@ export const CHAIN_IDS_TO_TOKEN_MESSENGER: Record<number, Hex | string> = {
 };
 
 export const CHAIN_IDS_TO_MESSAGE_TRANSMITTER: Record<number, Hex | string> = {
+  [SupportedChainId.ETH_MAINNET]: "0x0a992d191deec32afe3620397c5ce221629e46c4",
   [SupportedChainId.ETH_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
   [SupportedChainId.AVAX_FUJI]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
   [SupportedChainId.BASE_SEPOLIA]: "0xe737e5cebeeba77efe34d4aa090756590b1ce275",
@@ -105,6 +110,7 @@ export const CHAIN_IDS_TO_MESSAGE_TRANSMITTER: Record<number, Hex | string> = {
 };
 
 export const DESTINATION_DOMAINS: Record<number, number> = {
+  [SupportedChainId.ETH_MAINNET]: 0,
   [SupportedChainId.ETH_SEPOLIA]: 0,
   [SupportedChainId.AVAX_FUJI]: 1,
   [SupportedChainId.BASE_SEPOLIA]: 6,
@@ -121,6 +127,7 @@ export const DESTINATION_DOMAINS: Record<number, number> = {
 };
 
 export const SUPPORTED_CHAINS = [
+  SupportedChainId.ETH_MAINNET,
   SupportedChainId.ETH_SEPOLIA,
   SupportedChainId.AVAX_FUJI,
   SupportedChainId.BASE_SEPOLIA,
@@ -139,6 +146,9 @@ export const SUPPORTED_CHAINS = [
 // Solana RPC endpoint
 export const SOLANA_RPC_ENDPOINT = "https://api.devnet.solana.com";
 
-// IRIS API URL for CCTP attestations (testnet)
+// IRIS API URL for CCTP attestations
 export const IRIS_API_URL =
-  process.env.IRIS_API_URL ?? "https://iris-api-sandbox.circle.com";
+  process.env.NEXT_PUBLIC_IRIS_API_URL ?? "https://iris-api.circle.com";
+export const IRIS_API_URL_TESTNET =
+  process.env.NEXT_PUBLIC_IRIS_API_URL_TESTNET ??
+  "https://iris-api-sandbox.circle.com";
